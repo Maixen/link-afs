@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Panel</title>
+<style>
+body{margin:0;background:#0b1020;color:#e6eef8;font-family:system-ui}
+.wrap{max-width:1000px;margin:40px auto;padding:20px}
+input,button{padding:8px;border-radius:6px;border:1px solid #2b3a55;background:#111827;color:white}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{padding:8px;border-bottom:1px solid #24314a;text-align:left}
+.muted{color:#9fb3c8}
+.row{display:flex;gap:8px}
+.btn{cursor:pointer}
+.danger{background:#7f1d1d}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Short URL Admin</h1>
+<div id="login">
+<div class="row">
+<input id="email" placeholder="Admin Email" />
+<input id="password" type="password" placeholder="Passwort" />
+<button id="loginBtn" class="btn">Login</button>
+</div>
+</div>
+
+
+<div id="panel" style="display:none">
+<h3>Neuen Short-Link erstellen</h3>
+<div class="row">
+<input id="slug" placeholder="slug (z. B. yt)" />
+<input id="target" placeholder="https://example.com" style="flex:1" />
+<button id="create" class="btn">Erstellen</button>
+</div>
+
+
+<table>
+<thead><tr><th>Slug</th><th>Ziel</th><th>Hits</th><th></th></tr></thead>
+<tbody id="list"></tbody>
+</table>
+
+
+<button id="logout" class="btn">Logout</button>
+</div>
+</div>
+
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, increment } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDIY2V8GZOqdn7yw10-UBvendRFpfiZi-s",
+  authDomain: "afs-link-web.firebaseapp.com",
+  projectId: "afs-link-web",
+  storageBucket: "afs-link-web.firebasestorage.app",
+  messagingSenderId: "304806686418",
+  appId: "1:304806686418:web:d1ec3072745976368b870b",
+  measurementId: "G-EGTNRRV3JM"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+
+const login = document.getElementById('login');
+const panel = document.getElementById('panel');
+const list = document.getElementById('list');
+
+
+document.getElementById('loginBtn').onclick = () => {
+signInWithEmailAndPassword(auth,
+email.value,
+password.value
+).catch(e=>alert(e.message));
+};
+
+
+onAuthStateChanged(auth, user=>{
+if (user){ login.style.display='none'; panel.style.display='block'; load(); }
+else { login.style.display='block'; panel.style.display='none'; }
+});
+
+
+function load(){
+onSnapshot(collection(db,'shorturls'), snap=>{
+list.innerHTML='';
+snap.forEach(d=>{
+const tr=document.createElement('tr');
+tr.innerHTML=`<td>${d.id}</td><td>${d.data().target}</td><td>${d.data().hits||0}</td><td><button data-id="${d.id}" class="danger">X</button></td>`;
+tr.querySelector('button').onclick=()=>deleteDoc(doc(db,'shorturls',d.id));
+list.appendChild(tr);
+});
+});
+}
+
+
+document.getElementById('create').onclick = async ()=>{
+if(!slug.value||!target.value)return;
+await setDoc(doc(db,'shorturls',slug.value),{target:target.value,hits:0});
+slug.value=''; target.value='';
+};
+
+
+document.getElementById('logout').onclick=()=>signOut(auth);
+</script>
+</body>
+</html>

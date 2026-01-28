@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Short Redirect</title>
+<style>
+body{margin:0;display:flex;align-items:center;justify-content:center;height:100vh;background:#0b1020;color:#e6eef8;font-family:system-ui}
+.loader{width:64px;height:64px;border-radius:50%;border:8px solid rgba(255,255,255,.1);border-top-color:#4fd1c5;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.muted{color:#9fb3c8;margin-top:12px;text-align:center}
+</style>
+</head>
+<body>
+<div>
+<div class="loader"></div>
+<div class="muted">Weiterleitung…</div>
+</div>
+
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+import { getFirestore, doc, getDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDIY2V8GZOqdn7yw10-UBvendRFpfiZi-s",
+  authDomain: "afs-link-web.firebaseapp.com",
+  projectId: "afs-link-web",
+  storageBucket: "afs-link-web.firebasestorage.app",
+  messagingSenderId: "304806686418",
+  appId: "1:304806686418:web:d1ec3072745976368b870b",
+  measurementId: "G-EGTNRRV3JM"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+const params = new URLSearchParams(window.location.search);
+const slug = params.get("r");
+
+
+if (!slug){
+document.body.innerHTML = '<div class="muted">Kein Short-Link angegeben</div>';
+} else {
+const ref = doc(db, "shorturls", slug);
+const snap = await getDoc(ref);
+
+
+if (!snap.exists()){
+document.body.innerHTML = '<div class="muted">Short-Link nicht gefunden</div>';
+} else {
+try { await updateDoc(ref, { hits: increment(1) }); } catch {}
+window.location.href = snap.data().target;
+}
+}
+</script>
+</body>
+</html>
